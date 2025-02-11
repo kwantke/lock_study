@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:33306/stock_example?serverTimezone=Asia/Seoul
+    url: jdbc:mysql://192.168.0.20:33306/stock_example?serverTimezone=Asia/Seoul
     username: root
     password: root01
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,7 +19,10 @@ spring:
         jdbc:
           time_zone: Asia/Seoul
     open-in-view: false
-
+  data:
+    redis:
+      host: '192.168.0.20'
+      port: 6379
 
 logging:
   level:

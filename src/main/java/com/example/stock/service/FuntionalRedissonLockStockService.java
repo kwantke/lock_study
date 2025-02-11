@@ -25,6 +25,8 @@ public class FuntionalRedissonLockStockService {
         String lockKey = "stock:" + productId;
 
         lockUtil.executeWithLock(lockKey, 4, 2, () -> {
+
+            //Transactional 을 락으로 감쌓는다
             decreaseStock(productId, quantity);
             return null;
         });
