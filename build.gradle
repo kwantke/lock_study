@@ -6,7 +6,9 @@ plugins {
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
-
+jar {
+  archiveBaseName.set('myapp') // JAR 파일 기본 이름 변경
+}
 java {
   toolchain {
     languageVersion = JavaLanguageVersion.of(17)
