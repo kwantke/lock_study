@@ -6,6 +6,8 @@ plugins {
 
 group = 'com.example'
 version = ''
+
+// plain.jar 파일 생성 방지
 tasks.named('jar').configure {
   enabled = false  // "plain.jar" 파일 생성 방지
 }
