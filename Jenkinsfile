@@ -37,5 +37,52 @@ pipeline {
                 }
             }
         }
+        stage('k8s push') {
+            when {
+              expression { params.K8S_PUSH == true }
+            }
+            agent any
+            steps {
+              sh 'git config --global user.email "test@naver.com"'
+              sh 'git config --global user.name "kwantke"'
+              sh 'git add -A'
+              sh 'git commit -m "update! version: "' + imageTag + '" by Jenkins"'
+              withCredentials({
+                  gitUsernamePassword(
+                      credentialsId: "github-signin",
+                      usernameVariable: "GIT_USERNAME",
+                      passwordVariable": "GIT_PASSWORD"
+              )}) {
+                  sh('sh push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/kwantke/argocd.git')
+              }
+            }
+        }
+        stage('argocd sync') {
+            when{
+                expression { params.ARGOCD_SYNC == true}
+            }
+            agent any
+            steps {
+                sh """
+                  curl -k -L \\
+                    -X POST \\
+                    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \\
+                    -H "Content-Type: application/json" \\
+                    https://192.168.56.112:32695/api/v1/applications/argocd-hello-web/sync \\
+                    -d '{
+                      "revision": "HEAD",
+                      "prune": false,
+                      "dryRun": false,
+                      "strategy": {
+                        "hook": {
+                          "force": false
+                        }
+                      },
+                      "resources": []
+                    }'
+                """
+            }
+        }
+
     }
 }
