@@ -1,0 +1,42 @@
+server:
+  port: 8080
+spring:
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:mysql://192.168.0.20:33306/stock_example_dev?serverTimezone=Asia/Seoul
+    username: root
+    password: root01
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 40
+
+  sql.init.mode: never
+  jpa:
+    hibernate:
+      ddl-auto: create  # create, update, validate, none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          time_zone: Asia/Seoul
+    open-in-view: false
+  data:
+    redis:
+      host: '192.168.0.20'
+      port: 6379
+
+logging:
+  level:
+    org:
+      hibernate:
+        sql: DEBUG
+        type:
+          descriptor:
+            sql: trace
+        orm:
+          jdbc:
+            bind: trace
+

@@ -5,7 +5,15 @@ pipeline {
         stage('Checkout') {
             agent any  // ✅ Checkout 단계에서는 노드 할당 필요
             steps {
-                git branch: 'main', url: 'https://github.com/kwantke/lock_study.git'
+                git branch: 'dev', url: 'https://github.com/kwantke/lock_study.git'
+            }
+        }
+        stage('Gradle Build') {
+            agent any
+            steps {
+                sh 'chmod +x gradlew'
+                sh './gradlew dependencies --no-daemon'
+                sh './gradlew clean build -x test --no-daemon --stacktrace'
             }
         }
         stage('Docker Build') {
@@ -23,7 +31,9 @@ pipeline {
                         imageTag = env.BUILD_NUMBER
                     }
                 }
-                sh "docker build -t kwangko/test1:${imageTag} ."
+                sh """
+                    docker build --build-arg ENVIRONMENT=${params.ENVIRONMENT} -t kwangko/test1:${params.ENVIRONMENT}_${imageTag} .
+                """
             }
         }
         stage('Docker Push') {
@@ -33,56 +43,9 @@ pipeline {
             agent any  // ✅ Docker Push 실행할 노드 지정
             steps {
                 withDockerRegistry(credentialsId: 'dockerhub-signin', url: 'https://index.docker.io/v1/') {
-                    sh "docker push kwangko/test1:${imageTag}"
+                    sh "docker push kwangko/test1:${params.ENVIRONMENT}_${imageTag}"
                 }
             }
         }
-        stage('k8s push') {
-            when {
-              expression { params.K8S_PUSH == true }
-            }
-            agent any
-            steps {
-              sh 'git config --global user.email "test@naver.com"'
-              sh 'git config --global user.name "kwantke"'
-              sh 'git add -A'
-              sh 'git commit -m "update! version: "' + imageTag + '" by Jenkins"'
-              withCredentials({
-                  gitUsernamePassword(
-                      credentialsId: "github-signin",
-                      usernameVariable: "GIT_USERNAME",
-                      passwordVariable": "GIT_PASSWORD"
-              )}) {
-                  sh('sh push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/kwantke/argocd.git')
-              }
-            }
-        }
-        stage('argocd sync') {
-            when{
-                expression { params.ARGOCD_SYNC == true}
-            }
-            agent any
-            steps {
-                sh """
-                  curl -k -L \\
-                    -X POST \\
-                    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \\
-                    -H "Content-Type: application/json" \\
-                    https://192.168.56.112:32695/api/v1/applications/argocd-hello-web/sync \\
-                    -d '{
-                      "revision": "HEAD",
-                      "prune": false,
-                      "dryRun": false,
-                      "strategy": {
-                        "hook": {
-                          "force": false
-                        }
-                      },
-                      "resources": []
-                    }'
-                """
-            }
-        }
-
     }
 }
